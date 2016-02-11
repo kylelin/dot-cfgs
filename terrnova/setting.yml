@@ -1,0 +1,55 @@
+---
+- hosts: localhost
+  remote_user: lyn
+  sudo: yes
+  vars: 
+    user_path: /home/lyn
+    user_name: lyn
+  tasks:
+    - name: install the 'Development Tools' package group
+      dnf: name="@Development Tools" state=present
+    - name: setup git cfg
+      copy: src="{{user_path}}/workspace/dot-cfgs/.gitconfig" dest="{{user_path}}//.gitconfig"
+    - name: setup git ignores
+      copy: src="{{user_path}}/workspace/dot-cfgs/.gitignore" dest="{{user_path}}//.gitignore"
+    - name: install the vim package
+      dnf: name=vim state=present
+    - name: install awesome package
+      dnf: name=awesome state=present
+    - name: install zsh package
+      dnf: name=zsh state=present
+    - name: change shell
+      command: chsh -s /bin/zsh "{{user_name}}"
+    - name: setup dot-zshrc
+      copy: src="{{user_path}}/workspace/dot-cfgs/.zshrc" dest="{{user_path}}/.zshrc"  owner="{{user_name}}" group=0644
+    - name: install tmux package
+      dnf: name=tmux state=present
+    - name: install tig package
+      dnf: name=tig state=present
+    - name: test bundle for vim
+      command: rm -rf "{{user_path}}/bundle/vundle"
+      register: bundle_result
+      ignore_errors: True
+    - name: configure vim
+      command: git clone https://github.com/gmarik/vundle.git "{{user_path}}/bundle/vundle"
+      when: bundle_result.rc == 0
+    - name: setup vim bundle
+      copy: src="{{user_path}}/bundle/vundle" dest="{{user_path}}/.vim/bundle/vundle" owner="{{user_name}}" group=0644
+    - name: change .vim permission
+      file: path="{{user_path}}/.vim" state=directory recurse=yes owner="{{user_name}}" group="{{user_name}}" mode=0755
+    - name: setup vimrc
+      copy: src="{{user_path}}/workspace/dot-cfgs/.vimrc" dest="{{user_path}}/.vimrc" owner="{{user_name}}" group=0644
+
+    - name: clean previous awesome cfgs
+      command: "rm -rf {{user_path}}/.config/awesome"
+      ignore_errors: True
+    - name: setup awesome
+      synchronize: src="{{user_path}}/workspace/dot-cfgs/awesome" dest="{{user_path}}/.config"
+      register: awesome_result
+      ignore_errors: True
+    - name: replace theme cfg
+      replace: dest="{{user_path}}/.config/awesome/rc.lua" regexp="THEME_CFG_PATH" replace="{{user_path}}/.config/awesome/themes/default/theme.lua"
+      when: awesome_result.rc == 0
+    - name: replace theme
+      replace: dest="{{user_path}}/.config/awesome/themes/default/theme.lua" regexp="THEME_PATH" replace="{{user_path}}/.config/awesome/themes/default"
+...

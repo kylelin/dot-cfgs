@@ -8,6 +8,12 @@
   tasks:
     - name: install the 'Development Tools' package group
       dnf: name="@Development Tools" state=present
+    - name: install the 'Buildsys-build' package group
+      dnf: name="@buildsys-build"
+    - name: install the 'python-devel' package
+      dnf: name=python-devel state=present
+    - name: install the 'lapack-devel' package
+      dnf: name=lapack-devel state=present
     - name: setup git cfg
       copy: src="{{user_path}}/workspace/dot-cfgs/.gitconfig" dest="{{user_path}}//.gitconfig"
     - name: setup git ignores

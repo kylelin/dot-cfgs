@@ -56,4 +56,6 @@
       when: awesome_result.rc == 0
     - name: replace theme
       replace: dest="{{user_path}}/.config/awesome/themes/default/theme.lua" regexp="THEME_PATH" replace="{{user_path}}/.config/awesome/themes/default"
+    - name: replace display setup cmd
+      replace: dest="{{user_path}}/.config/awesome/rc.lua" regexp="DISPLAY_SETUP_CMD" replace="{{user_path}}/.config/awesome/setup_display.sh"
 ...

@@ -33,14 +33,12 @@
     - name: install tig package
       dnf: name=tig state=present
     - name: test bundle for vim
-      command: rm -rf "{{user_path}}/bundle/vundle"
+      command: rm -rf "{{user_path}}/vundle.git"
       register: bundle_result
       ignore_errors: True
     - name: configure vim
       command: git clone https://github.com/gmarik/vundle.git "{{user_path}}/vundle.git"
       when: bundle_result.rc == 0
-    - name: setup vim bundle
-      copy: src="{{user_path}}/bundle/vundle" dest="{{user_path}}/.vim/bundle/vundle" owner="{{user_name}}" group=0644
     - name: change .vim permission
       file: path="{{user_path}}/.vim" state=directory recurse=yes owner="{{user_name}}" group="{{user_name}}" mode=0755
     - name: setup vimrc

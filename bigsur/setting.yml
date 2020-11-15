@@ -1,0 +1,64 @@
+---
+- hosts: localhost
+  become_user: root
+  become: true
+  vars: 
+    user_path: /home/yanpeng
+    user_name: yanpeng
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+    - name: install 'build-essential'
+      apt:
+        name:
+          - build-essential
+          - git
+          - vim
+          - zsh
+          - tmux
+          - tig
+          - awesome
+          - wget
+          - xclip
+    - name: setup git cfg
+      copy: src="{{user_path}}/workspace/cfgs/dot-cfgs/.gitconfig" dest="{{user_path}}//.gitconfig"
+    - name: setup git ignores
+      copy: src="{{user_path}}/workspace/cfgs/dot-cfgs/.gitignore" dest="{{user_path}}//.gitignore"
+    - name: change shell
+      command: chsh -s /bin/zsh "{{user_name}}"
+    - name: setup dot-tmux
+      copy: src="{{user_path}}/workspace/cfgs/dot-cfgs/.tmux.conf.3" dest="{{user_path}}/.tmux.conf"  owner="{{user_name}}" group=0644
+    - name: setup dot-zshrc
+      copy: src="{{user_path}}/workspace/cfgs/dot-cfgs/.zshrc" dest="{{user_path}}/.zshrc"  owner="{{user_name}}" group=0644
+    - name: test bundle for vim
+      command: rm -rf "{{user_path}}/.vim/bundle"
+      register: bundle_result
+      ignore_errors: True
+    - name: configure vim
+      command: git clone https://github.com/VundleVim/Vundle.vim.git "{{user_path}}/.vim/bundle/Vundle.vim"
+      when: bundle_result.rc == 0
+      # https://github.com/VundleVim/Vundle.vim#quick-start
+    - name: set permission for vim
+      command: chown -R "{{user_name}}" "{{user_path}}/.vim"
+    - name: setup vimrc
+      copy: src="{{user_path}}/workspace/cfgs/dot-cfgs/.vimrc" dest="{{user_path}}/.vimrc" owner="{{user_name}}" group=0644
+    - name: install vundles
+      command: vim +PluginInstall +qall
+    - name: clean previous awesome cfgs
+      command: "rm -rf {{user_path}}/.config/awesome"
+      ignore_errors: True
+    - name: setup awesome
+      synchronize: src="{{user_path}}/workspace/cfgs/dot-cfgs/awesome" dest="{{user_path}}/.config"
+      register: awesome_result
+      ignore_errors: True
+    - name: replace theme cfg
+      replace: dest="{{user_path}}/.config/awesome/rc.lua" regexp="THEME_CFG_PATH" replace="{{user_path}}/.config/awesome/themes/default/theme.lua"
+      when: awesome_result.rc == 0
+    - name: replace theme
+      replace: dest="{{user_path}}/.config/awesome/themes/default/theme.lua" regexp="THEME_PATH" replace="{{user_path}}/.config/awesome/themes/default"
+
+    - name: download Anaconda
+      command: wget -P "{{user_path}}/workspace/tmp" "https://repo.anaconda.com/archive/Anaconda3-2020.07-Linux-x86_64.sh"
+    - name: setup Anaconda package
+      command: chown -R "{{user_name}}" "{{user_path}}/workspace/tmp"

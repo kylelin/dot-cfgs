@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+declare -r BIN_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+declare -r SA_LIST="$(ls ${BIN_PATH}/../gcloud_keys/*.json)"
+declare SA_ARRAY
+declare SA_SA_ARRAY
+declare SA_PJ_ARRAY
+
+declare IDX=0
+
+for SA in ${SA_LIST}
+do
+    SA_ARRAY[${IDX}]=${SA}
+    SERVICE_ACCOUNT=$(echo $(cat ${SA}) | tail -1 | sed 's/.*client_email\": \"\(.*\)\", \"client_id.*/\1/g')
+    PROJECT_ID=$(echo $(cat ${SA}) | tail -1 | sed 's/.*project_id\": \"\(.*\)\", \"private_key_id.*/\1/g')
+    SA_SA_ARRAY[${IDX}]=${SERVICE_ACCOUNT}
+    SA_PJ_ARRAY[${IDX}]=${PROJECT_ID}
+    ((IDX=IDX+1))
+done
+
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+echo "      Please choose SA id"
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+for INDEX in "${!SA_ARRAY[@]}"
+do
+    echo "ID:<${INDEX}> FROM ${SA_PJ_ARRAY[$INDEX]}    -->   ${SA_SA_ARRAY[$INDEX]}"
+done
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+echo "      Please choose SA id"
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+
+read CHOOSED_ID
+XID=$((CHOOSED_ID))
+[[ $XID -gt $IDX ]] && echo "Please input proper id less than $IDX!" && exit 255
+re="^[0-9]+$"
+if ! [[ $XID =~ $re ]]
+then
+    echo "Please input proper id that is numberic"
+    exit 255
+fi
+echo "Selected ${XID} of ${SA_SA_ARRAY[$XID]}"
+echo "export GOOGLE_APPLICATION_CREDENTIALS=${SA_ARRAY[$XID]}" | pbcopy
+echo "Please paste and ENTER!"

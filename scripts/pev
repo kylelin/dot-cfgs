@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+declare -r BIN_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+declare -r CONTEXT_LIST="$(conda env list | grep -v '#' | sed -e 's/*/ /g' | awk '{env_detail=sprintf("%s-->%s", $1, $2); print env_detail}' | grep -v '^-->')"
+declare CTX_ARRAY
+
+declare IDX=0
+
+for CTX in ${CONTEXT_LIST}
+do
+    CTX_ARRAY[${IDX}]=${CTX}
+    #echo $CTX
+    #echo $IDX
+    ((IDX=IDX+1))
+done
+
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+echo "      Please choose context id"
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+for INDEX in "${!CTX_ARRAY[@]}"
+do
+    echo "ID:<${INDEX}> FROM ${CTX_ARRAY[$INDEX]}"
+done
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+echo "      Please choose context id"
+seq -s'-' 1 $(tput cols) | tr -d '[:digit:]'
+
+read CHOOSED_ID
+XID=$((CHOOSED_ID))
+[[ $XID -gt $IDX ]] && echo "Please input proper id less than $IDX!" && exit 255
+re="^[0-9]+$"
+if ! [[ $XID =~ $re ]]
+then
+    echo "Please input proper id that is numberic"
+    exit 255
+fi
+echo "Selected ${XID} of ${CTX_ARRAY[$XID]}"
+ENV_ID=$(echo ${CTX_ARRAY[$XID]} | sed 's/^\(.*\)-->.*/\1/')
+echo "Env ID: ${ENV_ID}"
+echo "conda activate ${ENV_ID}" | xclip -selection clipboard
+echo "Please paste and ENTER!"
